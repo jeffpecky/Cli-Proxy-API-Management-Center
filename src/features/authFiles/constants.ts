@@ -3,6 +3,8 @@ import iconAntigravity from '@/assets/icons/antigravity.svg';
 import iconClaude from '@/assets/icons/claude.svg';
 import iconCodex from '@/assets/icons/codex.svg';
 import iconGemini from '@/assets/icons/gemini.svg';
+import iconGrok from '@/assets/icons/grok.svg';
+import iconGrokDark from '@/assets/icons/grok-dark.svg';
 import iconIflow from '@/assets/icons/iflow.svg';
 import iconKimiDark from '@/assets/icons/kimi-dark.svg';
 import iconKimiLight from '@/assets/icons/kimi-light.svg';
@@ -29,7 +31,8 @@ export type QuotaProviderType =
   | 'codex'
   | 'gemini-cli'
   | 'kimi'
-  | 'qoder';
+  | 'qoder'
+  | 'xai';
 
 export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
   'antigravity',
@@ -38,6 +41,7 @@ export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
   'gemini-cli',
   'kimi',
   'qoder',
+  'xai',
 ]);
 
 export const MIN_CARD_PAGE_SIZE = 3;
@@ -95,6 +99,11 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
     light: { bg: '#ddf7ff', text: '#075985' },
     dark: { bg: '#0b3a4a', text: '#7dd3fc' },
   },
+  // xAI / Grok: graphite brand treatment, distinct from blue and purple providers
+  xai: {
+    light: { bg: '#f3f4f6', text: '#111827', border: '1px solid #d1d5db' },
+    dark: { bg: '#111827', text: '#f9fafb', border: '1px solid #374151' },
+  },
   // iFlow logo: 品红紫渐变 #5C5CFF → #AE5CFF，偏品红以区别于 Qwen 的紫罗兰
   iflow: {
     light: { bg: '#f5e3fc', text: '#9025c8' },
@@ -122,6 +131,7 @@ export const AUTH_FILE_ICONS: Record<string, AuthFileIconAsset> = {
   codex: iconCodex,
   gemini: iconGemini,
   'gemini-cli': iconGemini,
+  xai: { light: iconGrok, dark: iconGrokDark },
   iflow: iconIflow,
   kimi: { light: iconKimiLight, dark: iconKimiDark },
   qoder: iconQoder,
@@ -142,7 +152,11 @@ export const resolveQuotaErrorMessage = (
   return fallback;
 };
 
-export const normalizeProviderKey = (value: string) => value.trim().toLowerCase();
+export const normalizeProviderKey = (value: string) => {
+  const key = value.trim().toLowerCase().replace(/_/g, '-');
+  if (key === 'x-ai' || key === 'grok') return 'xai';
+  return key;
+};
 
 export const getAuthFileStatusMessage = (file: AuthFileItem): string => {
   const raw = file['status_message'] ?? file.statusMessage;
@@ -155,15 +169,16 @@ export const hasAuthFileStatusMessage = (file: AuthFileItem): boolean =>
   getAuthFileStatusMessage(file).length > 0;
 
 export const getTypeLabel = (t: TFunction, type: string): string => {
-  const key = `auth_files.filter_${type}`;
+  const providerKey = normalizeProviderKey(type);
+  const key = `auth_files.filter_${providerKey}`;
   const translated = t(key);
   if (translated !== key) return translated;
-  if (type.toLowerCase() === 'iflow') return 'iFlow';
+  if (providerKey === 'iflow') return 'iFlow';
   return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
 export const getTypeColor = (type: string, resolvedTheme: ResolvedTheme): ThemeColors => {
-  const set = TYPE_COLORS[type] || TYPE_COLORS.unknown;
+  const set = TYPE_COLORS[normalizeProviderKey(type)] || TYPE_COLORS.unknown;
   return resolvedTheme === 'dark' && set.dark ? set.dark : set.light;
 };
 
@@ -222,7 +237,7 @@ export const parseDisableCoolingValue = (value: unknown): boolean | undefined =>
 };
 
 export const readCodexAuthFileWebsockets = (value: Record<string, unknown>): boolean =>
-  parseDisableCoolingValue(value.websockets) ?? false;
+  parseDisableCoolingValue(value.websockets ?? value.websocket) ?? false;
 
 export const applyCodexAuthFileWebsockets = (
   value: Record<string, unknown>,
