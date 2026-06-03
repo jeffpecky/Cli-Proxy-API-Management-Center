@@ -27,6 +27,7 @@ import iconKimiDark from '@/assets/icons/kimi-dark.svg';
 import iconQoder from '@/assets/icons/qoder.svg';
 import iconGlm from '@/assets/icons/glm.svg';
 import iconGrok from '@/assets/icons/grok.svg';
+import iconGrokDark from '@/assets/icons/grok-dark.svg';
 import iconDeepseek from '@/assets/icons/deepseek.svg';
 import iconMinimax from '@/assets/icons/minimax.svg';
 import styles from './SystemPage.module.scss';
@@ -39,7 +40,7 @@ const MODEL_CATEGORY_ICONS: Record<string, string | { light: string; dark: strin
   kimi: { light: iconKimiLight, dark: iconKimiDark },
   qoder: iconQoder,
   glm: iconGlm,
-  grok: iconGrok,
+  grok: { light: iconGrok, dark: iconGrokDark },
   deepseek: iconDeepseek,
   minimax: iconMinimax,
 };
