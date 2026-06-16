@@ -45,6 +45,13 @@ export const OAUTH_PROVIDER_PRESETS = [
   'claude',
   'codex',
   'kimi',
+  'kiro',
+  'github',
+  'gitlab',
+  'iflow',
+  'kilo',
+  'qoder',
+  'cursor',
 ];
 
 const OAUTH_PROVIDER_EXCLUDES = new Set(['all', 'unknown', 'empty']);
@@ -103,6 +110,36 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
   xai: {
     light: { bg: '#f3f4f6', text: '#111827', border: '1px solid #d1d5db' },
     dark: { bg: '#111827', text: '#f9fafb', border: '1px solid #374151' },
+  },
+  // Kiro logo: orange #FF6B00
+  kiro: {
+    light: { bg: '#fff3e0', text: '#e65100' },
+    dark: { bg: '#4e2600', text: '#ffb74d' },
+  },
+  // GitHub: dark #24292E
+  github: {
+    light: { bg: '#f0f0f0', text: '#24292e' },
+    dark: { bg: '#24292e', text: '#f0f0f0' },
+  },
+  // GitLab: orange #FC6D26
+  gitlab: {
+    light: { bg: '#fef0e8', text: '#c44d19' },
+    dark: { bg: '#5c2400', text: '#fc9e71' },
+  },
+  // Kilo: purple #7C3AED
+  kilo: {
+    light: { bg: '#f3e8ff', text: '#6d28d9' },
+    dark: { bg: '#3b0764', text: '#c4b5fd' },
+  },
+  // Qoder: green #059669
+  qoder: {
+    light: { bg: '#e6f9f1', text: '#047857' },
+    dark: { bg: '#003d29', text: '#6ee7b7' },
+  },
+  // Cursor: black
+  cursor: {
+    light: { bg: '#f3f4f6', text: '#111827' },
+    dark: { bg: '#1f2937', text: '#f9fafb' },
   },
   // iFlow logo: 品红紫渐变 #5C5CFF → #AE5CFF，偏品红以区别于 Qwen 的紫罗兰
   iflow: {

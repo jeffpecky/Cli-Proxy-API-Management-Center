@@ -17,6 +17,13 @@ export type AuthFileType =
   | 'xai'
   | 'iflow'
   | 'vertex'
+  | 'kiro'
+  | 'github'
+  | 'gitlab'
+  | 'kilo'
+  | 'qoder'
+  | 'cursor'
+  | 'codebuddy'
   | 'empty'
   | 'unknown';
 
