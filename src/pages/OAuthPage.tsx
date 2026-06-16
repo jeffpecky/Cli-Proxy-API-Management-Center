@@ -10,7 +10,7 @@ import { apiClient } from '@/services/api/client';
 import { vertexApi, type VertexImportResponse } from '@/services/api/vertex';
 import { copyToClipboard } from '@/utils/clipboard';
 import { getErrorMessage, isRecord } from '@/utils/helpers';
-import { OAUTH_PROVIDERS, type AltAuthMethod } from '@/features/oauth/providers';
+import { OAUTH_PROVIDER_GROUPS, type AltAuthMethod } from '@/features/oauth/providers';
 import styles from './OAuthPage.module.scss';
 import iconCodex from '@/assets/icons/codex.svg';
 import iconClaude from '@/assets/icons/claude.svg';
@@ -22,6 +22,9 @@ import iconVertex from '@/assets/icons/vertex.svg';
 import iconGrok from '@/assets/icons/grok.svg';
 import iconGrokDark from '@/assets/icons/grok-dark.svg';
 import iconIflow from '@/assets/icons/iflow.svg';
+import iconQwen from '@/assets/icons/qwen.svg';
+import iconOpenaiLight from '@/assets/icons/openai-light.svg';
+import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
 
 interface ProviderState {
   url?: string;
@@ -43,6 +46,9 @@ interface ProviderState {
   altAuthResult?: string;
   altAuthError?: string;
   showAltAuth?: boolean;
+  codeInput?: string;
+  codeSubmitting?: boolean;
+  codeError?: string;
 }
 
 interface VertexImportResult {
@@ -78,6 +84,12 @@ const PROVIDER_ICONS: Partial<Record<OAuthProvider, string | { light: string; da
   kimi: { light: iconKimiLight, dark: iconKimiDark },
   xai: { light: iconGrok, dark: iconGrokDark },
   iflow: iconIflow,
+  qwen: iconQwen,
+  openai: { light: iconOpenaiLight, dark: iconOpenaiDark },
+  cline: iconClaude,
+  'xiaomi-mimo': iconQwen,
+  'xiaomi-tokenplan': iconQwen,
+  'mimo-free': iconQwen,
 };
 
 const getProviderIcon = (provider: OAuthProvider, theme: 'light' | 'dark'): string | null => {
@@ -311,6 +323,9 @@ export function OAuthPage() {
       callbackUrl: '',
       userCode: undefined,
       verificationUrl: undefined,
+      codeInput: undefined,
+      codeSubmitting: false,
+      codeError: undefined,
     });
     try {
       let res;
@@ -351,6 +366,30 @@ export function OAuthPage() {
         `${t(getAuthKey(provider, 'oauth_start_error'))}${message ? ` ${message}` : ''}`,
         'error'
       );
+    }
+  };
+
+  const submitXiaomiMimoCode = async (provider: OAuthProvider) => {
+    const state = states[provider];
+    const code = state?.codeInput?.trim();
+    if (!code || !state?.state) return;
+
+    updateProviderState(provider, { codeSubmitting: true, codeError: undefined });
+    try {
+      const res = await oauthApi.xiaomiMimoCallback(code, state.state);
+      updateProviderState(provider, {
+        codeSubmitting: false,
+        status: 'success',
+        codeInput: '',
+      });
+      showNotification(res.message || t('auth_login.xiaomi_mimo_oauth_status_success'), 'success');
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      updateProviderState(provider, {
+        codeSubmitting: false,
+        codeError: message || t('auth_login.xiaomi_mimo_oauth_status_error'),
+      });
+      showNotification(message || t('auth_login.xiaomi_mimo_oauth_status_error'), 'error');
     }
   };
 
@@ -500,14 +539,16 @@ export function OAuthPage() {
       <h1 className={styles.pageTitle}>{t('nav.oauth', { defaultValue: 'OAuth' })}</h1>
 
       <div className={styles.content}>
-        <div className={styles.providerGrid}>
-          {OAUTH_PROVIDERS.map((provider) => {
+        {OAUTH_PROVIDER_GROUPS.map((group) => (
+          <div key={group.label} className={styles.providerGroup}>
+            <div className={styles.groupHeader}>
+              <h2 className={styles.groupTitle}>{group.label}</h2>
+              <p className={styles.groupDescription}>{group.description}</p>
+            </div>
+            <div className={styles.providerGrid}>
+              {group.providers.map((provider) => {
             const state = states[provider.id] || {};
             const canSubmitCallback = provider.callbackSupported && Boolean(state.url);
-            const loginButtonLabel =
-              state.status === 'success'
-                ? t('auth_login.login_another_account')
-                : t(getAuthKey(provider.id, 'oauth_button'));
             const statusBadgeClassName = [
               'status-badge',
               state.status === 'success' ? 'success' : '',
@@ -532,11 +573,18 @@ export function OAuthPage() {
                     </span>
                   }
                   extra={
-                    provider.id === 'kiro' && !state.selectedMethod ? null : (
-                      <Button onClick={() => startAuth(provider.id)} loading={state.polling}>
-                        {loginButtonLabel}
-                      </Button>
-                    )
+                    provider.id === 'kiro' && !state.selectedMethod
+                      ? null
+                      : (
+                          <Button
+                            onClick={() => startAuth(provider.id)}
+                            loading={state.polling || state.altAuthSubmitting}
+                          >
+                            {state.status === 'success'
+                              ? t('auth_login.login_another_account')
+                              : t(getAuthKey(provider.id, 'oauth_button'))}
+                          </Button>
+                        )
                   }
                 >
                   <div className={styles.cardContent}>
@@ -604,6 +652,36 @@ export function OAuthPage() {
                             {t(getAuthKey(provider.id, 'open_link'))}
                           </Button>
                         </div>
+                      </div>
+                    )}
+                    {provider.id === 'xiaomi-mimo' && state.url && (
+                      <div className={styles.deviceCodeBox}>
+                        <div className={styles.deviceCodeLabel}>
+                          {t('auth_login.xiaomi_mimo_code_label')}
+                        </div>
+                        <input
+                          type="text"
+                          className={styles.deviceCodeInput}
+                          placeholder={t('auth_login.xiaomi_mimo_code_placeholder')}
+                          value={state.codeInput || ''}
+                          onChange={(e) => updateProviderState(provider.id, { codeInput: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && state.codeInput?.trim()) {
+                              submitXiaomiMimoCode(provider.id);
+                            }
+                          }}
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => submitXiaomiMimoCode(provider.id)}
+                          loading={state.codeSubmitting}
+                          disabled={!state.codeInput?.trim()}
+                        >
+                          {t('auth_login.xiaomi_mimo_code_submit')}
+                        </Button>
+                        {state.codeError && (
+                          <div className="status-badge error">{state.codeError}</div>
+                        )}
                       </div>
                     )}
                     {canSubmitCallback && (
@@ -724,9 +802,11 @@ export function OAuthPage() {
                   </div>
                 </Card>
               </div>
-            );
-          })}
-        </div>
+              );
+            })}
+            </div>
+          </div>
+        ))}
 
         {/* Vertex JSON 登录 */}
         <Card
