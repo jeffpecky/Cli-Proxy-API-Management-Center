@@ -22,6 +22,9 @@ export type OAuthProvider =
 export interface OAuthStartResponse {
   url: string;
   state?: string;
+  user_code?: string;
+  verification_uri?: string;
+  method?: string;
 }
 
 export interface OAuthCallbackResponse {
@@ -54,9 +57,34 @@ export const oauthApi = {
   },
 
   getAuthStatus: (state: string) =>
-    apiClient.get<{ status: 'ok' | 'wait' | 'error'; error?: string }>(`/get-auth-status`, {
+    apiClient.get<{
+      status: 'ok' | 'wait' | 'error' | 'device_code';
+      error?: string;
+      verification_url?: string;
+      user_code?: string;
+    }>(`/get-auth-status`, {
       params: { state }
     }),
+
+  startKiroAuth: (method: string) => {
+    return apiClient.get<OAuthStartResponse>('/kiro-auth-url', {
+      params: { method }
+    });
+  },
+
+  submitGitLabPAT: (data: { base_url?: string; personal_access_token: string }) => {
+    return apiClient.post<{ status: string; saved_path?: string; username?: string; email?: string }>(
+      '/gitlab-auth-url',
+      data
+    );
+  },
+
+  submitIFlowCookie: (data: { cookie: string }) => {
+    return apiClient.post<{ status: string; saved_path?: string; email?: string; expired?: string; type?: string }>(
+      '/iflow-auth-url',
+      data
+    );
+  },
 
   submitCallback: (provider: OAuthProvider, redirectUrl: string) => {
     const callbackProvider = CALLBACK_PROVIDER_MAP[provider] ?? provider;
