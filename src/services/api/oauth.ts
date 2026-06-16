@@ -17,7 +17,13 @@ export type OAuthProvider =
   | 'gitlab'
   | 'kilo'
   | 'qoder'
-  | 'cursor';
+  | 'cursor'
+  | 'qwen'
+  | 'openai'
+  | 'cline'
+  | 'xiaomi-mimo'
+  | 'xiaomi-tokenplan'
+  | 'mimo-free';
 
 export interface OAuthStartResponse {
   url: string;
@@ -92,5 +98,8 @@ export const oauthApi = {
       provider: callbackProvider,
       redirect_url: redirectUrl
     });
-  }
+  },
+
+  xiaomiMimoCallback: (code: string, state: string) =>
+    apiClient.post<{ status: string; message?: string }>('/xiaomi-mimo-callback', { code, state }),
 };
