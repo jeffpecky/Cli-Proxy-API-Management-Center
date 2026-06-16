@@ -9,7 +9,15 @@ export type OAuthProvider =
   | 'anthropic'
   | 'antigravity'
   | 'gemini-cli'
-  | 'kimi';
+  | 'kimi'
+  | 'xai'
+  | 'kiro'
+  | 'github'
+  | 'iflow'
+  | 'gitlab'
+  | 'kilo'
+  | 'qoder'
+  | 'cursor';
 
 // OAuth 流程状态
 export interface OAuthFlow {
