@@ -52,6 +52,7 @@ export const OAUTH_PROVIDER_PRESETS = [
   'kilo',
   'qoder',
   'cursor',
+  'codebuddy',
 ];
 
 const OAUTH_PROVIDER_EXCLUDES = new Set(['all', 'unknown', 'empty']);
@@ -140,6 +141,11 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
   cursor: {
     light: { bg: '#f3f4f6', text: '#111827' },
     dark: { bg: '#1f2937', text: '#f9fafb' },
+  },
+  // CodeBuddy: blue #1E90FF
+  codebuddy: {
+    light: { bg: '#e8f4fd', text: '#1565c0' },
+    dark: { bg: '#0d47a1', text: '#90caf9' },
   },
   // iFlow logo: 品红紫渐变 #5C5CFF → #AE5CFF，偏品红以区别于 Qwen 的紫罗兰
   iflow: {
