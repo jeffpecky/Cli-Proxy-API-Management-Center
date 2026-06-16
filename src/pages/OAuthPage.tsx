@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useNotificationStore, useThemeStore } from '@/stores';
 import { oauthApi, type OAuthProvider } from '@/services/api/oauth';
+import { apiClient } from '@/services/api/client';
 import { vertexApi, type VertexImportResponse } from '@/services/api/vertex';
 import { copyToClipboard } from '@/utils/clipboard';
 import { getErrorMessage, isRecord } from '@/utils/helpers';
@@ -420,12 +421,7 @@ export function OAuthPage() {
         const val = fields[f.name]?.trim();
         if (val) payload[f.name] = val;
       });
-      let res: { status: string; saved_path?: string; username?: string; email?: string; expired?: string; type?: string } | undefined;
-      if (method.type === 'pat' && provider === 'gitlab') {
-        res = await oauthApi.submitGitLabPAT(payload as { base_url?: string; personal_access_token: string });
-      } else if (method.type === 'cookie' && provider === 'iflow') {
-        res = await oauthApi.submitIFlowCookie(payload as { cookie: string });
-      }
+      const res = await apiClient.post<{ status: string; saved_path?: string; username?: string; email?: string; expired?: string; type?: string }>(method.endpoint, payload);
       updateProviderState(provider, {
         altAuthSubmitting: false,
         altAuthResult: (isRecord(res) && (res.username || res.email)) || t('auth_login.alt_auth_success', { defaultValue: 'Authentication successful!' }),
