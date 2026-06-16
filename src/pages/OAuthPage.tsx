@@ -9,6 +9,7 @@ import { oauthApi, type OAuthProvider } from '@/services/api/oauth';
 import { vertexApi, type VertexImportResponse } from '@/services/api/vertex';
 import { copyToClipboard } from '@/utils/clipboard';
 import { getErrorMessage, isRecord } from '@/utils/helpers';
+import { OAUTH_PROVIDERS, type AltAuthMethod } from '@/features/oauth/providers';
 import styles from './OAuthPage.module.scss';
 import iconCodex from '@/assets/icons/codex.svg';
 import iconClaude from '@/assets/icons/claude.svg';
@@ -19,6 +20,7 @@ import iconKimiDark from '@/assets/icons/kimi-dark.svg';
 import iconVertex from '@/assets/icons/vertex.svg';
 import iconGrok from '@/assets/icons/grok.svg';
 import iconGrokDark from '@/assets/icons/grok-dark.svg';
+import iconIflow from '@/assets/icons/iflow.svg';
 
 interface ProviderState {
   url?: string;
@@ -32,6 +34,14 @@ interface ProviderState {
   callbackSubmitting?: boolean;
   callbackStatus?: 'success' | 'error';
   callbackError?: string;
+  userCode?: string;
+  verificationUrl?: string;
+  selectedMethod?: string;
+  altAuthFields?: Record<string, string>;
+  altAuthSubmitting?: boolean;
+  altAuthResult?: string;
+  altAuthError?: string;
+  showAltAuth?: boolean;
 }
 
 interface VertexImportResult {
@@ -55,31 +65,31 @@ function getErrorStatus(error: unknown): number | undefined {
   return typeof error.status === 'number' ? error.status : undefined;
 }
 
-const PROVIDERS: { id: OAuthProvider; titleKey: string; hintKey: string; urlLabelKey: string; icon: string | { light: string; dark: string } }[] = [
-  { id: 'codex', titleKey: 'auth_login.codex_oauth_title', hintKey: 'auth_login.codex_oauth_hint', urlLabelKey: 'auth_login.codex_oauth_url_label', icon: iconCodex },
-  { id: 'anthropic', titleKey: 'auth_login.anthropic_oauth_title', hintKey: 'auth_login.anthropic_oauth_hint', urlLabelKey: 'auth_login.anthropic_oauth_url_label', icon: iconClaude },
-  { id: 'antigravity', titleKey: 'auth_login.antigravity_oauth_title', hintKey: 'auth_login.antigravity_oauth_hint', urlLabelKey: 'auth_login.antigravity_oauth_url_label', icon: iconAntigravity },
-  { id: 'gemini-cli', titleKey: 'auth_login.gemini_cli_oauth_title', hintKey: 'auth_login.gemini_cli_oauth_hint', urlLabelKey: 'auth_login.gemini_cli_oauth_url_label', icon: iconGemini },
-  { id: 'kimi', titleKey: 'auth_login.kimi_oauth_title', hintKey: 'auth_login.kimi_oauth_hint', urlLabelKey: 'auth_login.kimi_oauth_url_label', icon: { light: iconKimiLight, dark: iconKimiDark } },
-  { id: 'xai', titleKey: 'auth_login.xai_oauth_title', hintKey: 'auth_login.xai_oauth_hint', urlLabelKey: 'auth_login.xai_oauth_url_label', icon: { light: iconGrok, dark: iconGrokDark } }
-];
+const getIcon = (icon: string | { light: string; dark: string }, theme: 'light' | 'dark') => {
+  return typeof icon === 'string' ? icon : icon[theme];
+};
 
-const CALLBACK_SUPPORTED: OAuthProvider[] = [
-  'codex',
-  'anthropic',
-  'antigravity',
-  'gemini-cli',
-  'xai'
-];
+const PROVIDER_ICONS: Partial<Record<OAuthProvider, string | { light: string; dark: string }>> = {
+  codex: iconCodex,
+  anthropic: iconClaude,
+  antigravity: iconAntigravity,
+  'gemini-cli': iconGemini,
+  kimi: { light: iconKimiLight, dark: iconKimiDark },
+  xai: { light: iconGrok, dark: iconGrokDark },
+  iflow: iconIflow,
+};
+
+const getProviderIcon = (provider: OAuthProvider, theme: 'light' | 'dark'): string | null => {
+  const icon = PROVIDER_ICONS[provider];
+  if (!icon) return null;
+  return getIcon(icon, theme);
+};
+
 const XAI_CALLBACK_URL = 'http://127.0.0.1:56121/callback';
 const SUCCESS_RESET_DELAY_MS = 5000;
 const getProviderI18nPrefix = (provider: OAuthProvider) => provider.replace('-', '_');
 const getAuthKey = (provider: OAuthProvider, suffix: string) =>
   `auth_login.${getProviderI18nPrefix(provider)}_${suffix}`;
-
-const getIcon = (icon: string | { light: string; dark: string }, theme: 'light' | 'dark') => {
-  return typeof icon === 'string' ? icon : icon[theme];
-};
 
 const isAbsoluteUrl = (value: string): boolean => {
   try {
@@ -262,6 +272,11 @@ export function OAuthPage() {
           );
           window.clearInterval(timer);
           delete pollingTimers.current[provider];
+        } else if (res.status === 'device_code') {
+          updateProviderState(provider, {
+            userCode: res.user_code,
+            verificationUrl: res.verification_url,
+          });
         }
       } catch (err: unknown) {
         updateProviderState(provider, { status: 'error', error: getErrorMessage(err), polling: false });
@@ -272,7 +287,7 @@ export function OAuthPage() {
     pollingTimers.current[provider] = timer;
   };
 
-  const startAuth = async (provider: OAuthProvider) => {
+  const startAuth = async (provider: OAuthProvider, method?: string) => {
     clearProviderTimers(provider);
     const geminiState = provider === 'gemini-cli' ? states[provider] : undefined;
     const rawProjectId = provider === 'gemini-cli' ? (geminiState?.projectId || '').trim() : '';
@@ -281,7 +296,6 @@ export function OAuthPage() {
         ? 'ALL'
         : rawProjectId
       : undefined;
-    // 项目 ID 可选：留空自动选择第一个可用项目；输入 ALL 获取全部项目
     if (provider === 'gemini-cli') {
       updateProviderState(provider, { projectIdError: undefined });
     }
@@ -293,13 +307,21 @@ export function OAuthPage() {
       error: undefined,
       callbackStatus: undefined,
       callbackError: undefined,
-      callbackUrl: ''
+      callbackUrl: '',
+      userCode: undefined,
+      verificationUrl: undefined,
     });
     try {
-      const res = await oauthApi.startAuth(
-        provider,
-        provider === 'gemini-cli' ? { projectId: projectId || undefined } : undefined
-      );
+      let res;
+      if (provider === 'kiro' && method) {
+        updateProviderState(provider, { selectedMethod: method });
+        res = await oauthApi.startKiroAuth(method);
+      } else {
+        res = await oauthApi.startAuth(
+          provider,
+          provider === 'gemini-cli' ? { projectId: projectId || undefined } : undefined
+        );
+      }
       if (!res.state) {
         const message = t('auth_login.missing_state');
         updateProviderState(provider, {
@@ -312,7 +334,14 @@ export function OAuthPage() {
         showNotification(message, 'error');
         return;
       }
-      updateProviderState(provider, { url: res.url, state: res.state, status: 'waiting', polling: true });
+      updateProviderState(provider, {
+        url: res.url,
+        state: res.state,
+        status: 'waiting',
+        polling: true,
+        userCode: res.user_code,
+        verificationUrl: res.verification_uri,
+      });
       startPolling(provider, res.state);
     } catch (err: unknown) {
       const message = getErrorMessage(err);
@@ -374,6 +403,41 @@ export function OAuthPage() {
         ? `${t('auth_login.oauth_callback_error')} ${errorMessage}`
         : t('auth_login.oauth_callback_error');
       showNotification(notificationMessage, 'error');
+    }
+  };
+
+  const submitAltAuth = async (provider: OAuthProvider, method: AltAuthMethod) => {
+    const fields = states[provider]?.altAuthFields || {};
+    const missing = method.fields.filter((f) => f.required && !fields[f.name]?.trim());
+    if (missing.length > 0) {
+      showNotification(t('auth_login.alt_auth_required_fields', { defaultValue: 'Please fill in all required fields' }), 'warning');
+      return;
+    }
+    updateProviderState(provider, { altAuthSubmitting: true, altAuthError: undefined, altAuthResult: undefined });
+    try {
+      const payload: Record<string, string> = {};
+      method.fields.forEach((f) => {
+        const val = fields[f.name]?.trim();
+        if (val) payload[f.name] = val;
+      });
+      let res: { status: string; saved_path?: string; username?: string; email?: string; expired?: string; type?: string } | undefined;
+      if (method.type === 'pat' && provider === 'gitlab') {
+        res = await oauthApi.submitGitLabPAT(payload as { base_url?: string; personal_access_token: string });
+      } else if (method.type === 'cookie' && provider === 'iflow') {
+        res = await oauthApi.submitIFlowCookie(payload as { cookie: string });
+      }
+      updateProviderState(provider, {
+        altAuthSubmitting: false,
+        altAuthResult: (isRecord(res) && (res.username || res.email)) || t('auth_login.alt_auth_success', { defaultValue: 'Authentication successful!' }),
+      });
+      showNotification(t('auth_login.alt_auth_success', { defaultValue: 'Authentication successful!' }), 'success');
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      updateProviderState(provider, {
+        altAuthSubmitting: false,
+        altAuthError: message || t('auth_login.alt_auth_error', { defaultValue: 'Authentication failed' }),
+      });
+      showNotification(message || t('auth_login.alt_auth_error', { defaultValue: 'Authentication failed' }), 'error');
     }
   };
 
@@ -440,147 +504,233 @@ export function OAuthPage() {
       <h1 className={styles.pageTitle}>{t('nav.oauth', { defaultValue: 'OAuth' })}</h1>
 
       <div className={styles.content}>
-        {PROVIDERS.map((provider) => {
-          const state = states[provider.id] || {};
-          const canSubmitCallback = CALLBACK_SUPPORTED.includes(provider.id) && Boolean(state.url);
-          const loginButtonLabel =
-            state.status === 'success'
-              ? t('auth_login.login_another_account')
-              : t(getAuthKey(provider.id, 'oauth_button'));
-          const statusBadgeClassName = [
-            'status-badge',
-            state.status === 'success' ? 'success' : '',
-            state.status === 'error' ? 'error' : ''
-          ]
-            .filter(Boolean)
-            .join(' ');
-          return (
-            <div key={provider.id}>
-              <Card
-                title={
-                  <span className={styles.cardTitle}>
-                    <img
-                      src={getIcon(provider.icon, resolvedTheme)}
-                      alt=""
-                      className={styles.cardTitleIcon}
-                    />
-                    {t(provider.titleKey)}
-                  </span>
-                }
-                extra={
-                  <Button onClick={() => startAuth(provider.id)} loading={state.polling}>
-                    {loginButtonLabel}
-                  </Button>
-                }
-              >
-                <div className={styles.cardContent}>
-                  <div className={styles.cardHint}>{t(provider.hintKey)}</div>
-                  {provider.id === 'gemini-cli' && (
-                    <div className={styles.geminiProjectField}>
-                      <Input
-                        label={t('auth_login.gemini_cli_project_id_label')}
-                        hint={t('auth_login.gemini_cli_project_id_hint')}
-                        value={state.projectId || ''}
-                        error={state.projectIdError}
-                        disabled={Boolean(state.polling)}
-                        onChange={(e) =>
-                          updateProviderState(provider.id, {
-                            projectId: e.target.value,
-                            projectIdError: undefined
-                          })
-                        }
-                        placeholder={t('auth_login.gemini_cli_project_id_placeholder')}
-                      />
-                    </div>
-                  )}
-                  {state.url && (
-                    <div className={styles.authUrlBox}>
-                      <div className={styles.authUrlLabel}>{t(provider.urlLabelKey)}</div>
-                      <div className={styles.authUrlValue}>{state.url}</div>
-                      <div className={styles.authUrlActions}>
-                        <Button variant="secondary" size="sm" onClick={() => copyLink(state.url!)}>
-                          {t(getAuthKey(provider.id, 'copy_link'))}
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => window.open(state.url, '_blank', 'noopener,noreferrer')}
-                        >
-                          {t(getAuthKey(provider.id, 'open_link'))}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  {canSubmitCallback && (
-                    <div className={styles.callbackSection}>
-                      <Input
-                        label={t(
-                          provider.id === 'xai'
-                            ? 'auth_login.xai_callback_label'
-                            : 'auth_login.oauth_callback_label'
-                        )}
-                        hint={t(
-                          provider.id === 'xai'
-                            ? 'auth_login.xai_callback_hint'
-                            : 'auth_login.oauth_callback_hint'
-                        )}
-                        value={state.callbackUrl || ''}
-                        onChange={(e) =>
-                          updateProviderState(provider.id, {
-                            callbackUrl: e.target.value,
-                            callbackStatus: undefined,
-                            callbackError: undefined
-                          })
-                        }
-                        placeholder={t(
-                          provider.id === 'xai'
-                            ? 'auth_login.xai_callback_placeholder'
-                            : 'auth_login.oauth_callback_placeholder'
-                        )}
-                      />
-                      <div className={styles.callbackActions}>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => submitCallback(provider.id)}
-                          loading={state.callbackSubmitting}
-                        >
-                          {t('auth_login.oauth_callback_button')}
-                        </Button>
-                      </div>
-                      {state.callbackStatus === 'success' && state.status === 'waiting' && (
-                        <div className="status-badge success">
-                          {t('auth_login.oauth_callback_status_success')}
-                        </div>
+        <div className={styles.providerGrid}>
+          {OAUTH_PROVIDERS.map((provider) => {
+            const state = states[provider.id] || {};
+            const canSubmitCallback = provider.callbackSupported && Boolean(state.url);
+            const loginButtonLabel =
+              state.status === 'success'
+                ? t('auth_login.login_another_account')
+                : t(getAuthKey(provider.id, 'oauth_button'));
+            const statusBadgeClassName = [
+              'status-badge',
+              state.status === 'success' ? 'success' : '',
+              state.status === 'error' ? 'error' : ''
+            ]
+              .filter(Boolean)
+              .join(' ');
+            const providerIcon = getProviderIcon(provider.id, resolvedTheme);
+            return (
+              <div key={provider.id} className={styles.providerCard}>
+                <Card
+                  title={
+                    <span className={styles.cardTitle}>
+                      {providerIcon && (
+                        <img
+                          src={providerIcon}
+                          alt=""
+                          className={styles.cardTitleIcon}
+                        />
                       )}
-                      {state.callbackStatus === 'error' && (
-                        <div className="status-badge error">
-                          {t('auth_login.oauth_callback_status_error')} {state.callbackError || ''}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {state.status && state.status !== 'idle' && (
-                    <div className={statusBadgeClassName}>
-                      {state.status === 'success'
-                        ? t(getAuthKey(provider.id, 'oauth_status_success'))
-                        : state.status === 'error'
-                          ? `${t(getAuthKey(provider.id, 'oauth_status_error'))} ${state.error || ''}`
-                          : t(getAuthKey(provider.id, 'oauth_status_waiting'))}
-                    </div>
-                  )}
-                  {state.status === 'success' && (
-                    <div className={styles.successActions}>
-                      <Button variant="secondary" size="sm" onClick={() => navigate('/auth-files')}>
-                        {t('auth_login.view_auth_files')}
+                      {provider.name}
+                    </span>
+                  }
+                  extra={
+                    provider.id === 'kiro' && !state.selectedMethod ? null : (
+                      <Button onClick={() => startAuth(provider.id)} loading={state.polling}>
+                        {loginButtonLabel}
                       </Button>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-          );
-        })}
+                    )
+                  }
+                >
+                  <div className={styles.cardContent}>
+                    {provider.id === 'kiro' && !state.selectedMethod && (
+                      <div className={styles.methodSelector}>
+                        {provider.kiroMethods?.map((m) => (
+                          <Button
+                            key={m.value}
+                            variant="secondary"
+                            size="sm"
+                            className={styles.methodButton}
+                            onClick={() => startAuth(provider.id, m.value)}
+                          >
+                            {m.label}
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                    {provider.id === 'gemini-cli' && (
+                      <div className={styles.geminiProjectField}>
+                        <Input
+                          label={t('auth_login.gemini_cli_project_id_label')}
+                          hint={t('auth_login.gemini_cli_project_id_hint')}
+                          value={state.projectId || ''}
+                          error={state.projectIdError}
+                          disabled={Boolean(state.polling)}
+                          onChange={(e) =>
+                            updateProviderState(provider.id, {
+                              projectId: e.target.value,
+                              projectIdError: undefined
+                            })
+                          }
+                          placeholder={t('auth_login.gemini_cli_project_id_placeholder')}
+                        />
+                      </div>
+                    )}
+                    {state.userCode && (
+                      <div className={styles.deviceCodeBox}>
+                        <div className={styles.deviceCodeLabel}>
+                          {t('auth_login.device_code_label', { defaultValue: 'Enter this code:' })}
+                        </div>
+                        <div className={styles.deviceCodeValue}>{state.userCode}</div>
+                        {state.verificationUrl && (
+                          <div className={styles.deviceCodeUrl}>{state.verificationUrl}</div>
+                        )}
+                      </div>
+                    )}
+                    {state.url && (
+                      <div className={styles.authUrlBox}>
+                        <div className={styles.authUrlLabel}>
+                          {t(getAuthKey(provider.id, 'oauth_url_label'), {
+                            defaultValue: 'Open the link below to authorize:'
+                          })}
+                        </div>
+                        <div className={styles.authUrlValue}>{state.url}</div>
+                        <div className={styles.authUrlActions}>
+                          <Button variant="secondary" size="sm" onClick={() => copyLink(state.url!)}>
+                            {t(getAuthKey(provider.id, 'copy_link'))}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => window.open(state.url, '_blank', 'noopener,noreferrer')}
+                          >
+                            {t(getAuthKey(provider.id, 'open_link'))}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {canSubmitCallback && (
+                      <div className={styles.callbackSection}>
+                        <Input
+                          label={t(
+                            provider.id === 'xai'
+                              ? 'auth_login.xai_callback_label'
+                              : 'auth_login.oauth_callback_label'
+                          )}
+                          hint={t(
+                            provider.id === 'xai'
+                              ? 'auth_login.xai_callback_hint'
+                              : 'auth_login.oauth_callback_hint'
+                          )}
+                          value={state.callbackUrl || ''}
+                          onChange={(e) =>
+                            updateProviderState(provider.id, {
+                              callbackUrl: e.target.value,
+                              callbackStatus: undefined,
+                              callbackError: undefined
+                            })
+                          }
+                          placeholder={t(
+                            provider.id === 'xai'
+                              ? 'auth_login.xai_callback_placeholder'
+                              : 'auth_login.oauth_callback_placeholder'
+                          )}
+                        />
+                        <div className={styles.callbackActions}>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => submitCallback(provider.id)}
+                            loading={state.callbackSubmitting}
+                          >
+                            {t('auth_login.oauth_callback_button')}
+                          </Button>
+                        </div>
+                        {state.callbackStatus === 'success' && state.status === 'waiting' && (
+                          <div className="status-badge success">
+                            {t('auth_login.oauth_callback_status_success')}
+                          </div>
+                        )}
+                        {state.callbackStatus === 'error' && (
+                          <div className="status-badge error">
+                            {t('auth_login.oauth_callback_status_error')} {state.callbackError || ''}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {provider.altMethods && provider.altMethods.length > 0 && (
+                      <>
+                        <button
+                          className={styles.altAuthToggle}
+                          onClick={() =>
+                            updateProviderState(provider.id, { showAltAuth: !state.showAltAuth })
+                          }
+                        >
+                          {state.showAltAuth
+                            ? t('auth_login.alt_auth_hide', { defaultValue: 'Hide alternative auth' })
+                            : t('auth_login.alt_auth_show', { defaultValue: 'Use alternative auth' })}
+                        </button>
+                        {state.showAltAuth && provider.altMethods.map((method) => (
+                          <div key={method.type} className={styles.altAuthForm}>
+                            <div className={styles.sectionTitle}>{method.label}</div>
+                            {method.fields.map((field) => (
+                              <Input
+                                key={field.name}
+                                label={field.label}
+                                value={state.altAuthFields?.[field.name] || ''}
+                                onChange={(e) =>
+                                  updateProviderState(provider.id, {
+                                    altAuthFields: {
+                                      ...(state.altAuthFields || {}),
+                                      [field.name]: e.target.value,
+                                    },
+                                  })
+                                }
+                                placeholder={field.placeholder}
+                              />
+                            ))}
+                            <div className={styles.altAuthActions}>
+                              <Button
+                                size="sm"
+                                onClick={() => submitAltAuth(provider.id, method)}
+                                loading={state.altAuthSubmitting}
+                              >
+                                {t('auth_login.alt_auth_submit', { defaultValue: 'Submit' })}
+                              </Button>
+                            </div>
+                            {state.altAuthResult && (
+                              <div className="status-badge success">{state.altAuthResult}</div>
+                            )}
+                            {state.altAuthError && (
+                              <div className="status-badge error">{state.altAuthError}</div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    {state.status && state.status !== 'idle' && (
+                      <div className={statusBadgeClassName}>
+                        {state.status === 'success'
+                          ? t(getAuthKey(provider.id, 'oauth_status_success'))
+                          : state.status === 'error'
+                            ? `${t(getAuthKey(provider.id, 'oauth_status_error'))} ${state.error || ''}`
+                            : t(getAuthKey(provider.id, 'oauth_status_waiting'))}
+                      </div>
+                    )}
+                    {state.status === 'success' && (
+                      <div className={styles.successActions}>
+                        <Button variant="secondary" size="sm" onClick={() => navigate('/auth-files')}>
+                          {t('auth_login.view_auth_files')}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            );
+          })}
+        </div>
 
         {/* Vertex JSON 登录 */}
         <Card

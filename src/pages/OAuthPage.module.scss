@@ -245,3 +245,106 @@
   word-break: break-all;
   overflow-wrap: anywhere;
 }
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 $spacing-md 0;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.providerGrid {
+  display: grid;
+  gap: $spacing-lg;
+  grid-template-columns: 1fr;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.providerCard {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.deviceCodeBox {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.deviceCodeLabel {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.deviceCodeValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-family: monospace;
+  letter-spacing: 2px;
+}
+
+.deviceCodeUrl {
+  font-size: 13px;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.methodSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.methodButton {
+  flex: 1;
+  min-width: 120px;
+}
+
+.altAuthToggle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--primary-color);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+
+  &:hover {
+    color: var(--primary-hover);
+  }
+}
+
+.altAuthForm {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+}
+
+.altAuthActions {
+  display: flex;
+  gap: $spacing-sm;
+}
