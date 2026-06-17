@@ -25,6 +25,7 @@ import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
 import iconQwen from '@/assets/icons/qwen.svg';
 import iconKimiLight from '@/assets/icons/kimi-light.svg';
 import iconKimiDark from '@/assets/icons/kimi-dark.svg';
+import iconQoder from '@/assets/icons/qoder.svg';
 import iconGlm from '@/assets/icons/glm.svg';
 import iconGrok from '@/assets/icons/grok.svg';
 import iconGrokDark from '@/assets/icons/grok-dark.svg';
@@ -38,6 +39,7 @@ const MODEL_CATEGORY_ICONS: Record<string, string | { light: string; dark: strin
   gemini: iconGemini,
   qwen: iconQwen,
   kimi: { light: iconKimiLight, dark: iconKimiDark },
+  qoder: iconQoder,
   glm: iconGlm,
   grok: { light: iconGrok, dark: iconGrokDark },
   deepseek: iconDeepseek,

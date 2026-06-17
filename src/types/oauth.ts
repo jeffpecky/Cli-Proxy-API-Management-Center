@@ -10,20 +10,8 @@ export type OAuthProvider =
   | 'antigravity'
   | 'gemini-cli'
   | 'kimi'
-  | 'xai'
-  | 'kiro'
-  | 'github'
-  | 'iflow'
-  | 'gitlab'
-  | 'kilo'
   | 'qoder'
-  | 'cursor'
-  | 'qwen'
-  | 'openai'
-  | 'cline'
-  | 'xiaomi-mimo'
-  | 'xiaomi-tokenplan'
-  | 'mimo-free';
+  | 'xai';
 
 // OAuth 流程状态
 export interface OAuthFlow {

@@ -28,6 +28,8 @@ import type {
   GeminiCliUserTier,
   KimiQuotaRow,
   KimiQuotaState,
+  QoderQuotaState,
+  QoderUsageSnapshot,
   XaiBillingConfig,
   XaiBillingSummary,
   XaiQuotaState,
@@ -81,6 +83,7 @@ import {
   isDisabledAuthFile,
   isGeminiCliFile,
   isKimiFile,
+  isQoderFile,
   isRuntimeOnlyAuthFile,
   isXaiFile,
 } from '@/utils/quota';
@@ -91,7 +94,7 @@ import styles from '@/pages/QuotaPage.module.scss';
 
 type QuotaUpdater<T> = T | ((prev: T) => T);
 
-type QuotaType = 'antigravity' | 'claude' | 'codex' | 'gemini-cli' | 'kimi' | 'xai';
+type QuotaType = 'antigravity' | 'claude' | 'codex' | 'gemini-cli' | 'kimi' | 'qoder' | 'xai';
 
 const DEFAULT_ANTIGRAVITY_PROJECT_ID = 'bamboo-precept-lgxtn';
 const QUOTA_PROGRESS_HIGH_THRESHOLD = 70;
@@ -113,12 +116,14 @@ export interface QuotaStore {
   codexQuota: Record<string, CodexQuotaState>;
   geminiCliQuota: Record<string, GeminiCliQuotaState>;
   kimiQuota: Record<string, KimiQuotaState>;
+  qoderQuota: Record<string, QoderQuotaState>;
   xaiQuota: Record<string, XaiQuotaState>;
   setAntigravityQuota: (updater: QuotaUpdater<Record<string, AntigravityQuotaState>>) => void;
   setClaudeQuota: (updater: QuotaUpdater<Record<string, ClaudeQuotaState>>) => void;
   setCodexQuota: (updater: QuotaUpdater<Record<string, CodexQuotaState>>) => void;
   setGeminiCliQuota: (updater: QuotaUpdater<Record<string, GeminiCliQuotaState>>) => void;
   setKimiQuota: (updater: QuotaUpdater<Record<string, KimiQuotaState>>) => void;
+  setQoderQuota: (updater: QuotaUpdater<Record<string, QoderQuotaState>>) => void;
   setXaiQuota: (updater: QuotaUpdater<Record<string, XaiQuotaState>>) => void;
   clearQuotaCache: () => void;
 }
@@ -1484,6 +1489,82 @@ const fetchKimiQuota = async (file: AuthFileItem, t: TFunction): Promise<KimiQuo
   return buildKimiQuotaRows(payload);
 };
 
+const readQoderUsageSnapshot = (file: AuthFileItem): QoderUsageSnapshot | null => {
+  const raw = file.usage;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  return raw as QoderUsageSnapshot;
+};
+
+const fetchQoderQuota = async (file: AuthFileItem, t: TFunction): Promise<QoderUsageSnapshot> => {
+  const usage = readQoderUsageSnapshot(file);
+  if (!usage) {
+    throw new Error(t('qoder_quota.empty_data'));
+  }
+  return usage;
+};
+
+const normalizeBooleanValue = (value: unknown): boolean => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    return ['true', '1', 'yes', 'y', 'on'].includes(normalized);
+  }
+  return false;
+};
+
+const formatQoderAmount = (value: number | null, unit = ''): string => {
+  if (value === null) return '-';
+  const formatted = new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 2,
+  }).format(value);
+  return unit ? `${formatted} ${unit}` : formatted;
+};
+
+const formatQoderExpiry = (value: unknown): string => {
+  const asNumber = normalizeNumberValue(value);
+  let date: Date | null = null;
+  if (asNumber !== null && asNumber > 0) {
+    date = new Date(asNumber < 1e12 ? asNumber * 1000 : asNumber);
+  } else if (typeof value === 'string') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      date = parsed;
+    }
+  }
+  if (!date || Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleString(undefined, {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+};
+
+const normalizeQoderUsedPercent = (usage: QoderUsageSnapshot): number | null => {
+  const explicit = normalizeNumberValue(usage.percentage);
+  if (explicit !== null) {
+    const percent = explicit <= 1 ? explicit * 100 : explicit;
+    return Math.max(0, Math.min(100, percent));
+  }
+
+  const total = normalizeNumberValue(usage.total);
+  if (!total || total <= 0) return null;
+
+  const used = normalizeNumberValue(usage.used);
+  if (used !== null) {
+    return Math.max(0, Math.min(100, (used / total) * 100));
+  }
+
+  const remaining = normalizeNumberValue(usage.remaining);
+  if (remaining !== null) {
+    return Math.max(0, Math.min(100, ((total - remaining) / total) * 100));
+  }
+
+  return null;
+};
+
 const renderKimiItems = (
   quota: KimiQuotaState,
   t: TFunction,
@@ -1534,6 +1615,95 @@ const renderKimiItems = (
       })
     );
   });
+};
+
+const renderQoderItems = (
+  quota: QoderQuotaState,
+  t: TFunction,
+  helpers: QuotaRenderHelpers
+): ReactNode => {
+  const { styles: styleMap, QuotaProgressBar } = helpers;
+  const { createElement: h, Fragment } = React;
+  const usage = quota.usage ?? null;
+
+  if (!usage) {
+    return h('div', { className: styleMap.quotaMessage }, t('qoder_quota.empty_data'));
+  }
+
+  const unit = normalizeStringValue(usage.unit) ?? t('qoder_quota.unit_default');
+  const used = normalizeNumberValue(usage.used);
+  const total = normalizeNumberValue(usage.total);
+  const remainingAmount = normalizeNumberValue(usage.remaining);
+  const orgRemaining = normalizeNumberValue(
+    usage.org_resource_remaining ?? usage.orgResourceRemaining
+  );
+  const usedPercent = normalizeQoderUsedPercent(usage);
+  const remainingPercent =
+    usedPercent === null ? null : Math.max(0, Math.min(100, 100 - usedPercent));
+  const percentLabel = remainingPercent === null ? '--' : `${Math.round(remainingPercent)}%`;
+  const resetLabel = formatQoderExpiry(usage.expires_at ?? usage.expiresAt);
+  const isExceeded = normalizeBooleanValue(usage.is_quota_exceeded ?? usage.isQuotaExceeded);
+  const amountLabel =
+    used !== null && total !== null
+      ? `${formatQoderAmount(used)} / ${formatQoderAmount(total, unit)}`
+      : remainingAmount !== null
+        ? t('qoder_quota.remaining_amount', {
+            amount: formatQoderAmount(remainingAmount, unit),
+          })
+        : null;
+
+  const nodes: ReactNode[] = [
+    h(
+      'div',
+      { key: 'usage', className: styleMap.quotaRow },
+      h(
+        'div',
+        { className: styleMap.quotaRowHeader },
+        h('span', { className: styleMap.quotaModel }, t('qoder_quota.usage_label')),
+        h(
+          'div',
+          { className: styleMap.quotaMeta },
+          h('span', { className: styleMap.quotaPercent }, percentLabel),
+          amountLabel ? h('span', { className: styleMap.quotaAmount }, amountLabel) : null,
+          resetLabel !== '-'
+            ? h(
+                'span',
+                { className: styleMap.quotaReset },
+                t('qoder_quota.expires_at', { time: resetLabel })
+              )
+            : null
+        )
+      ),
+      h(QuotaProgressBar, {
+        percent: remainingPercent,
+        highThreshold: QUOTA_PROGRESS_HIGH_THRESHOLD,
+        mediumThreshold: QUOTA_PROGRESS_MEDIUM_THRESHOLD,
+      })
+    ),
+  ];
+
+  if (orgRemaining !== null) {
+    nodes.push(
+      h(
+        'div',
+        { key: 'org', className: styleMap.codexPlan },
+        h('span', { className: styleMap.codexPlanLabel }, t('qoder_quota.org_resource_remaining')),
+        h('span', { className: styleMap.codexPlanValue }, formatQoderAmount(orgRemaining, unit))
+      )
+    );
+  }
+
+  if (isExceeded) {
+    nodes.push(
+      h(
+        'div',
+        { key: 'exceeded', className: styleMap.quotaWarning },
+        t('qoder_quota.quota_exceeded')
+      )
+    );
+  }
+
+  return h(Fragment, null, ...nodes);
 };
 
 const normalizeXaiCentValue = (value: XaiBillingConfig['monthlyLimit']): number | null => {
@@ -1702,6 +1872,29 @@ export const KIMI_CONFIG: QuotaConfig<KimiQuotaState, KimiQuotaRow[]> = {
   controlClassName: styles.kimiControl,
   gridClassName: styles.kimiGrid,
   renderQuotaItems: renderKimiItems,
+};
+
+export const QODER_CONFIG: QuotaConfig<QoderQuotaState, QoderUsageSnapshot> = {
+  type: 'qoder',
+  i18nPrefix: 'qoder_quota',
+  cardIdleMessageKey: 'quota_management.card_idle_hint',
+  filterFn: (file) => isQoderFile(file) && !isDisabledAuthFile(file),
+  fetchQuota: fetchQoderQuota,
+  storeSelector: (state) => state.qoderQuota,
+  storeSetter: 'setQoderQuota',
+  buildLoadingState: () => ({ status: 'loading', usage: null }),
+  buildSuccessState: (usage) => ({ status: 'success', usage }),
+  buildErrorState: (message, status) => ({
+    status: 'error',
+    usage: null,
+    error: message,
+    errorStatus: status,
+  }),
+  cardClassName: styles.qoderCard,
+  controlsClassName: styles.qoderControls,
+  controlClassName: styles.qoderControl,
+  gridClassName: styles.qoderGrid,
+  renderQuotaItems: renderQoderItems,
 };
 
 export const XAI_CONFIG: QuotaConfig<XaiQuotaState, XaiBillingSummary> = {

@@ -8,8 +8,7 @@ import iconGrokDark from '@/assets/icons/grok-dark.svg';
 import iconIflow from '@/assets/icons/iflow.svg';
 import iconKimiDark from '@/assets/icons/kimi-dark.svg';
 import iconKimiLight from '@/assets/icons/kimi-light.svg';
-import iconOpenaiLight from '@/assets/icons/openai-light.svg';
-import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
+import iconQoder from '@/assets/icons/qoder.svg';
 import iconQwen from '@/assets/icons/qwen.svg';
 import iconVertex from '@/assets/icons/vertex.svg';
 import type { AuthFileItem } from '@/types';
@@ -27,7 +26,14 @@ export type AuthFileModelItem = {
 };
 export type AuthFileIconAsset = string | { light: string; dark: string };
 
-export type QuotaProviderType = 'antigravity' | 'claude' | 'codex' | 'gemini-cli' | 'kimi' | 'xai';
+export type QuotaProviderType =
+  | 'antigravity'
+  | 'claude'
+  | 'codex'
+  | 'gemini-cli'
+  | 'kimi'
+  | 'qoder'
+  | 'xai';
 
 export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
   'antigravity',
@@ -35,6 +41,7 @@ export const QUOTA_PROVIDER_TYPES = new Set<QuotaProviderType>([
   'codex',
   'gemini-cli',
   'kimi',
+  'qoder',
   'xai',
 ]);
 
@@ -47,20 +54,6 @@ export const OAUTH_PROVIDER_PRESETS = [
   'claude',
   'codex',
   'kimi',
-  'kiro',
-  'github',
-  'gitlab',
-  'iflow',
-  'kilo',
-  'qoder',
-  'cursor',
-  'codebuddy',
-  'qwen',
-  'openai',
-  'cline',
-  'xiaomi-mimo',
-  'xiaomi-tokenplan',
-  'mimo-free',
 ];
 
 const OAUTH_PROVIDER_EXCLUDES = new Set(['all', 'unknown', 'empty']);
@@ -115,45 +108,15 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
     light: { bg: '#e0f7fa', text: '#006064' },
     dark: { bg: '#004d40', text: '#80deea' },
   },
+  // Qoder: deep cyan/blue UI mark, distinct from Gemini and Antigravity.
+  qoder: {
+    light: { bg: '#ddf7ff', text: '#075985' },
+    dark: { bg: '#0b3a4a', text: '#7dd3fc' },
+  },
   // xAI / Grok: graphite brand treatment, distinct from blue and purple providers
   xai: {
     light: { bg: '#f3f4f6', text: '#111827', border: '1px solid #d1d5db' },
     dark: { bg: '#111827', text: '#f9fafb', border: '1px solid #374151' },
-  },
-  // Kiro logo: orange #FF6B00
-  kiro: {
-    light: { bg: '#fff3e0', text: '#e65100' },
-    dark: { bg: '#4e2600', text: '#ffb74d' },
-  },
-  // GitHub: dark #24292E
-  github: {
-    light: { bg: '#f0f0f0', text: '#24292e' },
-    dark: { bg: '#24292e', text: '#f0f0f0' },
-  },
-  // GitLab: orange #FC6D26
-  gitlab: {
-    light: { bg: '#fef0e8', text: '#c44d19' },
-    dark: { bg: '#5c2400', text: '#fc9e71' },
-  },
-  // Kilo: purple #7C3AED
-  kilo: {
-    light: { bg: '#f3e8ff', text: '#6d28d9' },
-    dark: { bg: '#3b0764', text: '#c4b5fd' },
-  },
-  // Qoder: green #059669
-  qoder: {
-    light: { bg: '#e6f9f1', text: '#047857' },
-    dark: { bg: '#003d29', text: '#6ee7b7' },
-  },
-  // Cursor: black
-  cursor: {
-    light: { bg: '#f3f4f6', text: '#111827' },
-    dark: { bg: '#1f2937', text: '#f9fafb' },
-  },
-  // CodeBuddy: blue #1E90FF
-  codebuddy: {
-    light: { bg: '#e8f4fd', text: '#1565c0' },
-    dark: { bg: '#0d47a1', text: '#90caf9' },
   },
   // iFlow logo: 品红紫渐变 #5C5CFF → #AE5CFF，偏品红以区别于 Qwen 的紫罗兰
   iflow: {
@@ -164,31 +127,6 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
   vertex: {
     light: { bg: '#e4edfd', text: '#2b5fbc' },
     dark: { bg: '#1a3d80', text: '#89b3f7' },
-  },
-  // OpenAI logo: 绿 #10A37F
-  openai: {
-    light: { bg: '#e6f7f2', text: '#0d8a65' },
-    dark: { bg: '#003d2e', text: '#6ee7b7' },
-  },
-  // Cline logo: 紫 #8B5CF6
-  cline: {
-    light: { bg: '#f3e8ff', text: '#7c3aed' },
-    dark: { bg: '#3b0764', text: '#c4b5fd' },
-  },
-  // Xiaomi MiMo: 橙 #FF6900
-  'xiaomi-mimo': {
-    light: { bg: '#fff3e0', text: '#e65100' },
-    dark: { bg: '#4e2600', text: '#ffb74d' },
-  },
-  // Xiaomi MiMo Token Plan: 红橙 #FF4500
-  'xiaomi-tokenplan': {
-    light: { bg: '#fff0e6', text: '#cc3700' },
-    dark: { bg: '#5c1800', text: '#ff8a65' },
-  },
-  // MiMo Free: 绿 #22C55E
-  'mimo-free': {
-    light: { bg: '#e6f9f1', text: '#15803d' },
-    dark: { bg: '#052e16', text: '#86efac' },
   },
   empty: {
     light: { bg: '#f5f5f5', text: '#616161' },
@@ -210,13 +148,9 @@ export const AUTH_FILE_ICONS: Record<string, AuthFileIconAsset> = {
   xai: { light: iconGrok, dark: iconGrokDark },
   iflow: iconIflow,
   kimi: { light: iconKimiLight, dark: iconKimiDark },
+  qoder: iconQoder,
   qwen: iconQwen,
   vertex: iconVertex,
-  openai: { light: iconOpenaiLight, dark: iconOpenaiDark },
-  cline: iconCodex,
-  'xiaomi-mimo': iconQwen,
-  'xiaomi-tokenplan': iconQwen,
-  'mimo-free': iconQwen,
 };
 
 export const clampCardPageSize = (value: number) =>

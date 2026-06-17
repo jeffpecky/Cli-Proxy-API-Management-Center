@@ -115,6 +115,7 @@
 .codexGrid,
 .geminiCliGrid,
 .kimiGrid,
+.qoderGrid,
 .xaiGrid {
   display: grid;
   gap: $spacing-md;
@@ -130,6 +131,7 @@
 .codexControls,
 .geminiCliControls,
 .kimiControls,
+.qoderControls,
 .xaiControls {
   display: flex;
   gap: $spacing-md;
@@ -143,6 +145,7 @@
 .codexControl,
 .geminiCliControl,
 .kimiControl,
+.qoderControl,
 .xaiControl {
   display: flex;
   flex-direction: column;
@@ -271,6 +274,10 @@
 
 .xaiCard {
   background-image: linear-gradient(180deg, rgba(243, 244, 246, 0.22), rgba(243, 244, 246, 0));
+}
+
+.qoderCard {
+  background-image: linear-gradient(180deg, rgba(221, 247, 255, 0.18), rgba(221, 247, 255, 0));
 }
 
 .quotaSection {

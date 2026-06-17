@@ -112,6 +112,8 @@ export function AuthFileCard(props: AuthFileCardProps) {
             ? styles.geminiCliCard
             : quotaType === 'kimi'
               ? styles.kimiCard
+              : quotaType === 'qoder'
+                ? styles.qoderCard
               : quotaType === 'xai'
                 ? styles.xaiCard
                 : '';

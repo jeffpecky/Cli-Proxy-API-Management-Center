@@ -4,6 +4,14 @@
 
 [English](README.md)
 
+## 维护分支
+
+`kaitranntt/Cli-Proxy-API-Management-Center` 是 **CLIProxyAPIPlus** 的仪表盘发布流。Fork 版本会发布 `management.html` 资源，供 CLIProxyAPIPlus 独立下载和打包。
+
+- 干净的上游更新会在包管理器门禁和构建通过后由 `Upstream Sync` workflow 合入。
+- 冲突或门禁失败会更新一个已指派的 `upstream-sync-blocked` 跟踪 issue。
+- Fork 自有仪表盘版本使用与上游兼容的 `vX.Y.Z-N` 标签后缀。
+
 **主项目**: https://github.com/router-for-me/CLIProxyAPI  
 **示例地址**: https://remote.router-for.me/  
 **最低版本要求**: ≥ 7.1.0（推荐最新）
@@ -79,8 +87,9 @@ bun run build
   - Gemini/Codex/Claude/Vertex 配置（Base URL、Headers、代理、模型别名、排除模型、Prefix）。
   - OpenAI 兼容提供商（多 Key、Header、自助从 `/v1/models` 拉取并导入模型别名、可选浏览器侧 `chat/completions` 测试）。
 - **认证文件**：上传/下载/删除 JSON 凭据，筛选/搜索/分页，标记 runtime-only；查看单个凭据可用模型（依赖后端支持）；管理 OAuth 排除模型（支持 `*` 通配符）；配置 OAuth 模型别名映射。
-- **OAuth**：对 Codex、Anthropic/Claude、Antigravity、Gemini CLI、Kimi、xAI/Grok 发起 OAuth/设备码流程并轮询状态；支持提交回调 URL 或 xAI/Grok 页面显示的 code；包含 Vertex JSON 凭据导入与 iFlow Cookie 导入。
-- **配额管理**：管理 Claude、Antigravity、Codex、Gemini CLI 等提供商的配额上限与使用情况。
+- **OAuth**：对 Codex、Anthropic/Claude、Antigravity、Gemini CLI、Kimi、Qoder、xAI/Grok 发起 OAuth/设备码流程并轮询状态；支持提交回调 URL 或 xAI/Grok 页面显示的 code；包含 Vertex JSON 凭据导入与 iFlow Cookie 导入。
+- **配额管理**：管理 Claude、Antigravity、Codex、Gemini CLI、Kimi、Qoder、xAI/Grok 等提供商的配额上限与使用情况。
+- **使用统计**：查看来自 `/v0/management/usage` 的请求总量、Token 总量、小时趋势，以及 API/模型维度统计。
 - **日志**：增量拉取日志、自动刷新、搜索、隐藏管理端流量、清空日志；下载请求错误日志文件。
 - **系统信息**：快捷链接、版本检查、请求日志开关、本地登录信息清理，以及拉取 `/v1/models` 并分组展示（需要至少一个代理 API Key 才能查询模型）。
 
@@ -117,6 +126,7 @@ bun run build
 
 - 使用 Vite 输出 **单文件 HTML**（`dist/index.html`），资源全部内联（`vite-plugin-singlefile`）。
 - 打 `vX.Y.Z` 标签会触发 `.github/workflows/release.yml`，发布 `dist/management.html`。
+- 维护分支也可能使用 `vX.Y.Z-N` 标签发布 fork 自有仪表盘版本。
 - 系统信息页显示的 UI 版本在构建期注入（优先使用环境变量 `VERSION`，否则使用 git tag / `package.json`）。
 
 ## 安全提示

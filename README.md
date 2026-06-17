@@ -4,6 +4,14 @@ A single-file Web UI (React + TypeScript) for operating and troubleshooting the 
 
 [中文文档](README_CN.md)
 
+## Maintained fork
+
+`kaitranntt/Cli-Proxy-API-Management-Center` is maintained as the dashboard release stream for **CLIProxyAPIPlus**. Fork releases publish `management.html` assets that CLIProxyAPIPlus can download and bundle independently from the upstream dashboard.
+
+- Clean upstream updates are merged by the `Upstream Sync` workflow after the package-manager gate and build pass.
+- Conflicts or failed gates update a single assigned `upstream-sync-blocked` issue.
+- Fork-only release tags use the upstream-compatible `vX.Y.Z-N` suffix pattern when an extra dashboard asset is needed.
+
 **Main Project**: https://github.com/router-for-me/CLIProxyAPI  
 **Example URL**: https://remote.router-for.me/  
 **Minimum Required Version**: ≥ 7.1.0 (recommended latest)
@@ -79,8 +87,9 @@ Check the CLI Proxy API server documentation/config comments for the full authen
   - Gemini/Codex/Claude/Vertex key entries (base URL, headers, proxy, model aliases, excluded models, prefix).
   - OpenAI-compatible providers (multiple API keys, custom headers, model alias import via `/v1/models`, optional browser-side "chat/completions" test).
 - **Auth Files**: upload/download/delete JSON credentials, filter/search/pagination, runtime-only indicators, view supported models per credential (when the server supports it), manage OAuth excluded models (supports `*` wildcards), configure OAuth model alias mappings.
-- **OAuth**: start OAuth/device flows for Codex, Anthropic/Claude, Antigravity, Gemini CLI, Kimi, and xAI/Grok; poll status; submit callback URLs or xAI/Grok displayed codes; import Vertex JSON credentials and iFlow cookies.
-- **Quota Management**: manage quota limits and usage for Claude, Antigravity, Codex, Gemini CLI, and other providers.
+- **OAuth**: start OAuth/device flows for Codex, Anthropic/Claude, Antigravity, Gemini CLI, Kimi, Qoder, and xAI/Grok; poll status; submit callback URLs or xAI/Grok displayed codes; import Vertex JSON credentials and iFlow cookies.
+- **Quota Management**: manage quota limits and usage for Claude, Antigravity, Codex, Gemini CLI, Kimi, Qoder, xAI/Grok, and other providers.
+- **Usage Statistics**: view request totals, token totals, hourly trends, and per API/model usage from `/v0/management/usage`.
 - **Logs**: tail logs with incremental polling, auto-refresh, search, hide management traffic, clear logs; download request error log files.
 - **System**: quick links, update check, request logging toggle, local login data cleanup, and fetch `/v1/models` (grouped view). Requires at least one proxy API key to query models.
 
@@ -117,6 +126,7 @@ The UI language is automatically detected from browser settings and can be manua
 
 - Vite produces a **single HTML** output (`dist/index.html`) with all assets inlined (via `vite-plugin-singlefile`).
 - Tagging `vX.Y.Z` triggers `.github/workflows/release.yml` to publish `dist/management.html`.
+- The maintained fork may use `vX.Y.Z-N` release tags for fork-owned dashboard builds.
 - The UI version shown on the System page is injected at build time (env `VERSION`, git tag, or `package.json` fallback).
 
 ## Security notes
