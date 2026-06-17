@@ -17,7 +17,13 @@ export type OAuthProvider =
   | 'gitlab'
   | 'kilo'
   | 'qoder'
-  | 'cursor';
+  | 'cursor'
+  | 'qwen'
+  | 'openai'
+  | 'cline'
+  | 'xiaomi-mimo'
+  | 'xiaomi-tokenplan'
+  | 'mimo-free';
 
 // OAuth 流程状态
 export interface OAuthFlow {

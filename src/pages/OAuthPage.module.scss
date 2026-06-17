@@ -25,7 +25,33 @@
 .content {
   display: flex;
   flex-direction: column;
-  gap: $spacing-xl;
+  gap: $spacing-2xl;
+}
+
+.providerGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.groupHeader {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-xs;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.groupDescription {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .cardContent {

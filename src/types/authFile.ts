@@ -24,6 +24,11 @@ export type AuthFileType =
   | 'qoder'
   | 'cursor'
   | 'codebuddy'
+  | 'openai'
+  | 'cline'
+  | 'xiaomi-mimo'
+  | 'xiaomi-tokenplan'
+  | 'mimo-free'
   | 'empty'
   | 'unknown';
 

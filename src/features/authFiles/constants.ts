@@ -8,6 +8,8 @@ import iconGrokDark from '@/assets/icons/grok-dark.svg';
 import iconIflow from '@/assets/icons/iflow.svg';
 import iconKimiDark from '@/assets/icons/kimi-dark.svg';
 import iconKimiLight from '@/assets/icons/kimi-light.svg';
+import iconOpenaiLight from '@/assets/icons/openai-light.svg';
+import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
 import iconQwen from '@/assets/icons/qwen.svg';
 import iconVertex from '@/assets/icons/vertex.svg';
 import type { AuthFileItem } from '@/types';
@@ -53,6 +55,12 @@ export const OAUTH_PROVIDER_PRESETS = [
   'qoder',
   'cursor',
   'codebuddy',
+  'qwen',
+  'openai',
+  'cline',
+  'xiaomi-mimo',
+  'xiaomi-tokenplan',
+  'mimo-free',
 ];
 
 const OAUTH_PROVIDER_EXCLUDES = new Set(['all', 'unknown', 'empty']);
@@ -157,6 +165,31 @@ export const TYPE_COLORS: Record<string, TypeColorSet> = {
     light: { bg: '#e4edfd', text: '#2b5fbc' },
     dark: { bg: '#1a3d80', text: '#89b3f7' },
   },
+  // OpenAI logo: 绿 #10A37F
+  openai: {
+    light: { bg: '#e6f7f2', text: '#0d8a65' },
+    dark: { bg: '#003d2e', text: '#6ee7b7' },
+  },
+  // Cline logo: 紫 #8B5CF6
+  cline: {
+    light: { bg: '#f3e8ff', text: '#7c3aed' },
+    dark: { bg: '#3b0764', text: '#c4b5fd' },
+  },
+  // Xiaomi MiMo: 橙 #FF6900
+  'xiaomi-mimo': {
+    light: { bg: '#fff3e0', text: '#e65100' },
+    dark: { bg: '#4e2600', text: '#ffb74d' },
+  },
+  // Xiaomi MiMo Token Plan: 红橙 #FF4500
+  'xiaomi-tokenplan': {
+    light: { bg: '#fff0e6', text: '#cc3700' },
+    dark: { bg: '#5c1800', text: '#ff8a65' },
+  },
+  // MiMo Free: 绿 #22C55E
+  'mimo-free': {
+    light: { bg: '#e6f9f1', text: '#15803d' },
+    dark: { bg: '#052e16', text: '#86efac' },
+  },
   empty: {
     light: { bg: '#f5f5f5', text: '#616161' },
     dark: { bg: '#424242', text: '#bdbdbd' },
@@ -179,6 +212,11 @@ export const AUTH_FILE_ICONS: Record<string, AuthFileIconAsset> = {
   kimi: { light: iconKimiLight, dark: iconKimiDark },
   qwen: iconQwen,
   vertex: iconVertex,
+  openai: { light: iconOpenaiLight, dark: iconOpenaiDark },
+  cline: iconCodex,
+  'xiaomi-mimo': iconQwen,
+  'xiaomi-tokenplan': iconQwen,
+  'mimo-free': iconQwen,
 };
 
 export const clampCardPageSize = (value: number) =>
