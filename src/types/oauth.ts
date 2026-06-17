@@ -11,7 +11,15 @@ export type OAuthProvider =
   | 'gemini-cli'
   | 'kimi'
   | 'qoder'
-  | 'xai';
+  | 'xai'
+  | 'iflow'
+  | 'kilo'
+  | 'qwen'
+  | 'cline'
+  | 'xiaomi-mimo'
+  | 'xiaomi-tokenplan'
+  | 'mimo-free'
+  | 'openai';
 
 // OAuth 流程状态
 export interface OAuthFlow {

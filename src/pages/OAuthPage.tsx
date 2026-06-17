@@ -19,6 +19,11 @@ import iconQoder from '@/assets/icons/qoder.svg';
 import iconVertex from '@/assets/icons/vertex.svg';
 import iconGrok from '@/assets/icons/grok.svg';
 import iconGrokDark from '@/assets/icons/grok-dark.svg';
+import iconIflow from '@/assets/icons/iflow.svg';
+import iconQwen from '@/assets/icons/qwen.svg';
+import iconOpenaiLight from '@/assets/icons/openai-light.svg';
+import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
+import iconOpencode from '@/assets/icons/opencode.svg';
 
 interface ProviderState {
   url?: string;
@@ -72,7 +77,14 @@ const PROVIDERS: { id: OAuthProvider; titleKey: string; hintKey: string; urlLabe
   { id: 'gemini-cli', titleKey: 'auth_login.gemini_cli_oauth_title', hintKey: 'auth_login.gemini_cli_oauth_hint', urlLabelKey: 'auth_login.gemini_cli_oauth_url_label', icon: iconGemini },
   { id: 'kimi', titleKey: 'auth_login.kimi_oauth_title', hintKey: 'auth_login.kimi_oauth_hint', urlLabelKey: 'auth_login.kimi_oauth_url_label', icon: { light: iconKimiLight, dark: iconKimiDark } },
   { id: 'qoder', titleKey: 'auth_login.qoder_oauth_title', hintKey: 'auth_login.qoder_oauth_hint', urlLabelKey: 'auth_login.qoder_oauth_url_label', icon: iconQoder },
-  { id: 'xai', titleKey: 'auth_login.xai_oauth_title', hintKey: 'auth_login.xai_oauth_hint', urlLabelKey: 'auth_login.xai_oauth_url_label', icon: { light: iconGrok, dark: iconGrokDark } }
+  { id: 'xai', titleKey: 'auth_login.xai_oauth_title', hintKey: 'auth_login.xai_oauth_hint', urlLabelKey: 'auth_login.xai_oauth_url_label', icon: { light: iconGrok, dark: iconGrokDark } },
+  { id: 'iflow', titleKey: 'auth_login.iflow_oauth_title', hintKey: 'auth_login.iflow_oauth_hint', urlLabelKey: 'auth_login.iflow_oauth_url_label', icon: iconIflow },
+  { id: 'kilo', titleKey: 'auth_login.kilo_oauth_title', hintKey: 'auth_login.kilo_oauth_hint', urlLabelKey: 'auth_login.kilo_oauth_url_label', icon: iconQwen },
+  { id: 'qwen', titleKey: 'auth_login.qwen_oauth_title', hintKey: 'auth_login.qwen_oauth_hint', urlLabelKey: 'auth_login.qwen_oauth_url_label', icon: iconQwen },
+  { id: 'cline', titleKey: 'auth_login.cline_oauth_title', hintKey: 'auth_login.cline_oauth_hint', urlLabelKey: 'auth_login.cline_oauth_url_label', icon: iconClaude },
+  { id: 'xiaomi-mimo', titleKey: 'auth_login.xiaomi_mimo_oauth_title', hintKey: 'auth_login.xiaomi_mimo_oauth_hint', urlLabelKey: 'auth_login.xiaomi_mimo_oauth_url_label', icon: iconQwen },
+  { id: 'opencode', titleKey: 'auth_login.opencode_oauth_title', hintKey: 'auth_login.opencode_oauth_hint', urlLabelKey: 'auth_login.opencode_oauth_url_label', icon: iconOpencode },
+  { id: 'openai', titleKey: 'auth_login.openai_oauth_title', hintKey: 'auth_login.openai_oauth_hint', urlLabelKey: 'auth_login.openai_oauth_url_label', icon: { light: iconOpenaiLight, dark: iconOpenaiDark } }
 ];
 
 const CALLBACK_SUPPORTED: OAuthProvider[] = [
