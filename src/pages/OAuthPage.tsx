@@ -24,6 +24,7 @@ import iconQwen from '@/assets/icons/qwen.svg';
 import iconOpenaiLight from '@/assets/icons/openai-light.svg';
 import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
 import iconOpencode from '@/assets/icons/opencode.svg';
+import iconXiaomi from '@/assets/icons/xiaomi.svg';
 
 interface ProviderState {
   url?: string;
@@ -82,8 +83,8 @@ const PROVIDERS: { id: OAuthProvider; titleKey: string; hintKey: string; urlLabe
   { id: 'kilo', titleKey: 'auth_login.kilo_oauth_title', hintKey: 'auth_login.kilo_oauth_hint', urlLabelKey: 'auth_login.kilo_oauth_url_label', icon: iconQwen },
   { id: 'qwen', titleKey: 'auth_login.qwen_oauth_title', hintKey: 'auth_login.qwen_oauth_hint', urlLabelKey: 'auth_login.qwen_oauth_url_label', icon: iconQwen },
   { id: 'cline', titleKey: 'auth_login.cline_oauth_title', hintKey: 'auth_login.cline_oauth_hint', urlLabelKey: 'auth_login.cline_oauth_url_label', icon: iconClaude },
-  { id: 'xiaomi-mimo', titleKey: 'auth_login.xiaomi_mimo_oauth_title', hintKey: 'auth_login.xiaomi_mimo_oauth_hint', urlLabelKey: 'auth_login.xiaomi_mimo_oauth_url_label', icon: iconQwen },
-  { id: 'mimo-free', titleKey: 'auth_login.mimo_free_oauth_title', hintKey: 'auth_login.mimo_free_oauth_hint', urlLabelKey: 'auth_login.mimo_free_oauth_url_label', icon: iconQwen },
+  { id: 'xiaomi-mimo', titleKey: 'auth_login.xiaomi_mimo_oauth_title', hintKey: 'auth_login.xiaomi_mimo_oauth_hint', urlLabelKey: 'auth_login.xiaomi_mimo_oauth_url_label', icon: iconXiaomi },
+  { id: 'mimo-free', titleKey: 'auth_login.mimo_free_oauth_title', hintKey: 'auth_login.mimo_free_oauth_hint', urlLabelKey: 'auth_login.mimo_free_oauth_url_label', icon: iconXiaomi },
   { id: 'opencode', titleKey: 'auth_login.opencode_oauth_title', hintKey: 'auth_login.opencode_oauth_hint', urlLabelKey: 'auth_login.opencode_oauth_url_label', icon: iconOpencode },
   { id: 'openai', titleKey: 'auth_login.openai_oauth_title', hintKey: 'auth_login.openai_oauth_hint', urlLabelKey: 'auth_login.openai_oauth_url_label', icon: { light: iconOpenaiLight, dark: iconOpenaiDark } }
 ];
