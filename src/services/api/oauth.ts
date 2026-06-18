@@ -17,6 +17,7 @@ export type OAuthProvider =
   | 'qwen'
   | 'cline'
   | 'xiaomi-mimo'
+  | 'mimo-free'
   | 'opencode'
   | 'openai';
 
@@ -41,6 +42,7 @@ const WEBUI_SUPPORTED: OAuthProvider[] = [
   'qwen',
   'cline',
   'xiaomi-mimo',
+  'mimo-free',
   'opencode',
   'openai'
 ];
