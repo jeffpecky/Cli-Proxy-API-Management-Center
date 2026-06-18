@@ -26,7 +26,6 @@ import iconOpenaiDark from '@/assets/icons/openai-dark.svg';
 import iconOpencode from '@/assets/icons/opencode.png';
 import iconXiaomi from '@/assets/icons/xiaomi-mimo.png';
 import iconMimoFree from '@/assets/icons/mimo-free.png';
-import iconOpenrouter from '@/assets/icons/openrouter.png';
 
 interface ProviderState {
   url?: string;
